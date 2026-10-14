@@ -13,9 +13,9 @@ jobs:
       matrix:
         node-version: [22.x, 24.x]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -35,13 +35,12 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24.x
           cache: npm
@@ -52,17 +51,19 @@ jobs:
         run: npm test > test-output.txt 2>&1 || true
 
       - name: Corregir con Claude Code
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            Los tests del proyecto fallan. La salida de `npm test` está en test-output.txt.
-            Encuentra la causa y corrige el código fuente (server/, public/) para que
-            todos los tests pasen. No modifiques ni elimines tests para que pasen, salvo
-            que el test sea claramente incorrecto; en ese caso explica por qué.
-            Ejecuta `npm test` para verificar el arreglo antes de terminar.
-          claude_args: >-
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm test),Bash(npm ci)"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Falta el secret ANTHROPIC_API_KEY en Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+          npm install -g @anthropic-ai/claude-code
+          claude -p "Los tests del proyecto fallan. La salida de npm test está en test-output.txt. \
+          Encuentra la causa y corrige el código fuente (server/, public/) para que todos los tests pasen. \
+          No modifiques ni elimines tests para que pasen, salvo que el test sea claramente incorrecto; \
+          en ese caso explica por qué. Ejecuta npm test para verificar el arreglo antes de terminar." \
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm test)"
 
       - name: Verificar que los tests pasan tras el arreglo
         run: |
