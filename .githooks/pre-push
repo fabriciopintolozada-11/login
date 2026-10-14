@@ -1,0 +1,29 @@
+#!/bin/sh
+# Ejecuta los tests antes de cada push. Si fallan e instalaste Claude Code,
+# intenta corregirlos; el push se cancela para que revises y hagas commit del arreglo.
+# Saltarlo puntualmente: git push --no-verify
+
+echo "Ejecutando tests antes del push..."
+npm test > .test-output.txt 2>&1 && { rm -f .test-output.txt; echo "Tests OK."; exit 0; }
+
+cat .test-output.txt
+
+if ! command -v claude >/dev/null 2>&1; then
+  rm -f .test-output.txt
+  echo "Los tests fallaron. Push cancelado."
+  exit 1
+fi
+
+echo "Los tests fallaron. Intentando corregirlos con Claude Code..."
+claude -p "Los tests fallan; la salida de npm test está en .test-output.txt. \
+Corrige el código fuente para que todos pasen, sin modificar ni eliminar tests \
+salvo que sean claramente incorrectos. Verifica con npm test." \
+  --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm test)"
+rm -f .test-output.txt
+
+if npm test; then
+  echo "Claude corrigió los tests. Revisa los cambios (git diff), haz commit y vuelve a hacer push."
+else
+  echo "No se pudieron corregir los tests automáticamente."
+fi
+exit 1

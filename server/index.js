@@ -88,6 +88,11 @@ setInterval(() => {
   db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(Date.now());
 }, 60 * 60 * 1000).unref();
 
-app.listen(PORT, () => {
-  console.log(`Servidor en http://localhost:${PORT}`);
-});
+export { app };
+
+// Solo arranca el servidor si se ejecuta directamente (no al importarlo en los tests)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  app.listen(PORT, () => {
+    console.log(`Servidor en http://localhost:${PORT}`);
+  });
+}
