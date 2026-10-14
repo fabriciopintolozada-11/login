@@ -1,0 +1,13 @@
+#!/bin/sh
+# Ejecuta los tests antes de cada push. Si alguno falla, intenta arreglarlo con
+# hooks/fix.sh y cancela el push para que revises el arreglo y hagas commit.
+# Saltarlo puntualmente: git push --no-verify
+
+echo "Ejecutando tests antes del push..."
+npm test && exit 0
+
+echo "Los tests fallaron. Intentando arreglarlo automáticamente..."
+if sh hooks/fix.sh; then
+  echo "Revisa el arreglo (git diff), haz commit y vuelve a hacer push."
+fi
+exit 1

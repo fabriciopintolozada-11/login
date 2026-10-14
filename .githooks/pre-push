@@ -1,9 +1,0 @@
-#!/bin/sh
-# Ejecuta los tests antes de cada push. Si alguno falla, el push se cancela.
-# Saltarlo puntualmente: git push --no-verify
-
-echo "Ejecutando tests antes del push..."
-npm test || {
-  echo "Los tests fallaron. Corrige el error y vuelve a hacer push."
-  exit 1
-}

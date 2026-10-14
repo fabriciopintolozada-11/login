@@ -23,3 +23,38 @@ jobs:
       - run: npm ci
 
       - run: npm test
+
+  # Si algún test falla, hooks/fix.sh restaura la última versión del código que
+  # pasa los tests y la sube como un commit nuevo a la misma rama
+  autofix:
+    needs: test
+    if: >-
+      failure() &&
+      (github.event_name == 'push' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Arreglar con hooks/fix.sh
+        run: sh hooks/fix.sh
+
+      - name: Subir el arreglo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A server public
+          git commit -m "fix: restaurar código que pasa los tests (autofix)"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
