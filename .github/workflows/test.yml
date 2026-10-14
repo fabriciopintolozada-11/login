@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -35,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -58,3 +60,10 @@ jobs:
           git add -A server public
           git commit -m "fix: restaurar código que pasa los tests (autofix)"
           git push origin HEAD:${{ github.head_ref || github.ref_name }}
+
+      # Los push hechos con GITHUB_TOKEN no lanzan workflows; se lanza a mano
+      # para que los tests se ejecuten (en verde) sobre el código arreglado
+      - name: Volver a ejecutar los tests sobre el arreglo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run test.yml --ref ${{ github.head_ref || github.ref_name }}
