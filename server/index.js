@@ -43,7 +43,7 @@ app.post('/api/register', async (req, res) => {
 
   if (!name) return res.status(400).json({ error: 'El nombre es obligatorio' });
   if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Email no válido' });
-  if (password.length < 8) {
+  if (password.length < 4) {
     return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
   }
 
